@@ -7,7 +7,14 @@ const csv = require('fast-csv');
 
 const upload = multer({dest: 'tmp/file/'});
 
-/* POST a location via file. */
+/* POST a location via file.
+  Accepted format: filename = location-name
+                   content = csv
+                   format = lat, lng, information
+                   example: filename: PiloteersBerlin
+                            content: 52.502931, 13.408249, office in Berlin
+
+*/
 router.post('/', upload.single('file'), function(req, res, next) {
   // getting filename without type-ending
   const locationName = req.file.originalname.split(".")[0];
