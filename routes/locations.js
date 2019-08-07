@@ -55,10 +55,7 @@ router.post('/', upload.single('file'), function(req, res, next) {
         return;
       };
 
-      const locationjson = {name: locationName, lat, lng, info};
-      // TO DO: save to DB
-      console.log(locationjson)
-      
+      const locationjson = {name: locationName, lat, lng, info};      
 
       db.insert(locationjson)
 
