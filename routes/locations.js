@@ -19,7 +19,7 @@ const db = require('./database/db');
                             content: 52.502931, 13.408249, office in Berlin
 
 */
-router.post('/', upload.single('file'), function(req, res, next) {
+router.post('/', upload.single('file'), (req, res, next) => {
   if(!req.file){
     res.status(400).send("No file found");
     return;
@@ -68,5 +68,10 @@ router.post('/', upload.single('file'), function(req, res, next) {
 
     })
 });
+router.get('/', (req, res, next) => {
+  // select all locaton names from db
+  res.send(db().select("name"));
+  res.end();
+})
 
 module.exports = router;
