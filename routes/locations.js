@@ -1,11 +1,15 @@
-var express = require('express');
+const express = require('express');
 const fs = require('fs');
-var router = express.Router();
+const router = express.Router();
 
+// for file upload
 const multer = require('multer');
 const csv = require('fast-csv');
 
 const upload = multer({dest: 'tmp/file/'});
+
+// import db
+const db = require('./database/db');
 
 /* POST a location via file.
   Accepted format: filename = location-name
@@ -16,6 +20,11 @@ const upload = multer({dest: 'tmp/file/'});
 
 */
 router.post('/', upload.single('file'), function(req, res, next) {
+  if(!req.file){
+    res.status(400).send("No file found");
+    return;
+  }
+  
   // getting filename without type-ending
   const locationName = req.file.originalname.split(".")[0];
   const locations = [];
@@ -46,9 +55,11 @@ router.post('/', upload.single('file'), function(req, res, next) {
         return;
       };
 
-      const locationjson = {name: locationName, lat, lng, info};
-      // TO DO: save to DB
-      console.log(locationjson);
+      const locationjson = {name: locationName, lat, lng, info};      
+
+      db.insert(locationjson)
+
+      console.log(db().stringify());
 
       res.status(200).send("location saved successfully");
       return;
