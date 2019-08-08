@@ -68,12 +68,33 @@ router.post('/', upload.single('file'), (req, res, next) => {
 
     })
 });
+
+// basic auth and verify users
+const auth = require('basic-auth');
+const user = require('./users/users')
+
+function basicAuth (req, res, callback) {
+  let credentials = auth(req);
+  let valid = user(credentials);
+  if (!credentials || !valid){
+    return callback(new Error('Access denied!'));
+  }
+  else {
+    return callback(null, credentials);
+  }
+}
+
+
 // get location names
 router.get('/', (req, res, next) => {
-  // select all locaton names from db, returns array
-  res.send(db().select("name"));
-  res.end();
-})
+  basicAuth(req, res, (err, credentials) => {
+    if(err) res.status(401).send(err.message).end();
+    else{
+      res.send(db().select("name"));
+      res.end();
+    }
+  });
+});
 
 // selects the first location that matches a given name
 const getLocationByName = (name, callback) => {
@@ -120,25 +141,26 @@ const distanceToPiloteersBerlin = (location, callback) => {
 
 // get location-details by name
 router.get('/:name', (req, res, next) => {
+  basicAuth(req, res, (err, credentials) => {
+    if(err) res.status(401).send(err.message).end();
+    else{
+      const locationname = req.params.name;
 
-  const locationname = req.params.name;
+      getLocationByName(locationname, (err, location) => {
 
-  getLocationByName(locationname, (err, location) => {
+        if(err) return next(err);
 
-    if(err) return next(err);
+        distanceToPiloteersBerlin(location, (err, distance) => {
+          if(err) return next(err);
 
-    distanceToPiloteersBerlin(location, (err, distance) => {
-      if(err) return next(err);
+          location.distance = distance;
 
-      location.distance = distance;
-
-      res.send(location);
-      res.end();
-  })
-
-  })
-
-
+          res.send(location);
+          res.end();
+        });
+      });
+    };
+  });
 });
 
 module.exports = router;
