@@ -1,1 +1,7 @@
-locations
+How to get started:
+
+1. clone repo
+2. npm install
+3. npm start
+
+4. post a location file via /locations or use basic authwith e.g. name: "admin" pass: "admin" for get requests.
