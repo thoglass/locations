@@ -77,34 +77,57 @@ router.get('/', (req, res, next) => {
 
 // selects the first location that matches a given name
 const getLocationByName = (name, callback) => {
-  const location = db().first({name: name});
-  if(!location) return callback(new Error('no location matching' + name))
+  const location = db().filter({name: name}).first();
+  if(!location) return callback(new Error('no location matching ' + name))
 
   return callback(null, location);
 };
 
-// calculates bee distance to piloteers office
-// input: location object, e.g. {name: "PiloteersBerlin", lat: 52.502931, lng: 13.408249, info: ""};
-const beeLineToPiloteersBerlin = (location, callback) => {
-  if(!location.lat || !location.lng) return callback(new Error("Make sure your location contains lat and lng properties"));
-  const piloteersBerlin = {name: "PiloteersBerlin", lat: 52.502, lng: 13.408249, info: ""};
-  // calculate bee line distance on a sphere
-  let distance = 6378.388 * Math.acos( Math.sin(piloteersBerlin.lat) * Math.sin(location.lat) + Math.cos(piloteersBerlin.lat) * Math.cos(location.lat) * Math.cos(piloteersBerlin.lng - location.lng));
-
-  distance = (distance > 0) ?  distance : -distance;
-
-  return callback(null, distance)
+// calculate degrees to radians
+function degreeToRadian(degree) {
+ return degree * Math.PI / 180;
 };
+
+// calculates distance to piloteers office
+// input: location object, e.g. {name: "PiloteersBerlin", lat: 52.502931, lng: 13.408249, info: ""};
+const distanceToPiloteersBerlin = (location, callback) => {
+
+  if(!location.lat || !location.lng) return callback(new Error("Make sure your location contains lat and lng properties"));
+  const piloteersBerlin = {name: "PiloteersBerlin", lat: 52.502931, lng: 13.408249, info: ""};
+
+  // calculate radians for difference between lngs and lats
+  let dLat = degreeToRadian(piloteersBerlin.lat - location.lat);
+  let dLng = degreeToRadian(piloteersBerlin.lng - location.lng);
+
+  //calculate radians for lats
+  let lat1 = degreeToRadian(location.lat);
+  let lat2 = degreeToRadian(piloteersBerlin.lat)
+
+  // calculate bee line distance on a sphere
+  
+  // radius of earth
+  const r = 6378.388;
+
+  let x =  Math.sin(dLat/2) * Math.sin(dLat/2) +
+  Math.sin(dLng/2) * Math.sin(dLng/2) * Math.cos(lat1) * Math.cos(lat2);
+  let distance = 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1-x)); 
+
+  return callback(null, r * distance);
+
+  // distance = (distance > 0) ?  distance : -distance;
+
+};
+
 // get location-details by name
 router.get('/:name', (req, res, next) => {
 
-  const locationname = req.param.name;
+  const locationname = req.params.name;
 
   getLocationByName(locationname, (err, location) => {
 
     if(err) return next(err);
 
-    beeLineToPiloteersBerlin(location, (err, distance) => {
+    distanceToPiloteersBerlin(location, (err, distance) => {
       if(err) return next(err);
 
       location.distance = distance;
